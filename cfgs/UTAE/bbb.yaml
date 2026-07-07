@@ -1,0 +1,35 @@
+# Bayes by Backpropagation (BbB) — UTAE backbone with Bayesian spatial conv layers.
+# Reference: Blundell et al., "Weight Uncertainty in Neural Networks", ICML 2015.
+#
+# Key hyperparameters to tune:
+#   kl_weight        — multiplier on the ELBO-correct KL/(num_training_batches ×
+#                      pixels_per_batch) term (kl_scale_by_batches: true); the pixel
+#                      factor matches the mean-per-pixel reconstruction loss. 1.0 is
+#                      the principled default; lower it if the model underfits,
+#                      raise for more regularisation.
+#   kl_anneal_epochs — linear warmup prevents posterior collapse early in training.
+#   bbb_samples      — forward passes at test time (10–30 is typical).
+#   prior_sigma1/2   — slab/spike of scale-mixture prior (Blundell defaults).
+seed_everything: 0
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    lr: 0.01
+model:
+  class_path: BBBLightning
+  init_args:
+    n_channels: 40
+    flatten_temporal_dimension: false
+    pos_class_weight: 10
+    loss_function: "BCE"
+    bbb_samples: 10          # stochastic forward passes at test time
+    kl_weight: 1.0e-06         
+    kl_scale_by_batches: false
+    kl_anneal_epochs: 20     # linear KL warm-up (0 = no annealing)
+    prior_sigma1: 1.0        # scale-mixture prior: slab std
+    prior_sigma2: 0.002      # scale-mixture prior: spike std
+    prior_pi: 0.5            # scale-mixture prior: slab weight
+    init_rho: -3.0           # initial ρ → σ = softplus(-3) ≈ 0.049
+do_train: true
+do_test: true
+do_predict: false

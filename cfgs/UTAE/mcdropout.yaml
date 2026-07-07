@@ -1,0 +1,25 @@
+# MC Dropout UTAE — decoder Dropout2d for epistemic uncertainty quantification.
+# Reference: Gal & Ghahramani, "Dropout as a Bayesian Approximation", ICML 2016.
+#
+# Key hyperparameters to tune:
+#   mc_dropout_rate    — Dropout2d probability applied to each decoder UpConvBlock.
+#                        Start at 0.2; increase for more uncertainty spread.
+#   mc_dropout_samples — stochastic forward passes at test time (10–30 is typical).
+#                        Predictions are averaged in probability space.
+seed_everything: 0
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    lr: 0.01
+model:
+  class_path: UTAELightning
+  init_args:
+    n_channels: 40
+    flatten_temporal_dimension: false
+    pos_class_weight: 10
+    loss_function: "BCE"
+    mc_dropout_rate: 0.2     # decoder dropout rate (active during train and test)
+    mc_dropout_samples: 20   # stochastic forward passes at test time (0 = disabled)
+do_train: true
+do_test: true
+do_predict: false

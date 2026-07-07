@@ -1,0 +1,39 @@
+# Conditional Flow Matching — UTAE backbone conditions a time-dependent velocity
+# field that transports Gaussian noise into next-day fire masks (generative
+# segmentation; aleatoric uncertainty from sampling multiple ODE trajectories).
+# Reference: Lipman et al., "Flow Matching for Generative Modeling", ICLR 2023.
+#
+# Key hyperparameters to tune:
+#   fm_ode_steps       — Euler steps per trajectory. More steps = more accurate
+#                        integration; 20 is usually enough for OT paths.
+#   fm_samples         — trajectories at test time; segmentation maps are
+#                        averaged and their variance reported as aleatoric
+#                        uncertainty.
+#   fm_hidden_channels / fm_n_blocks — capacity of the velocity net.
+#   fm_pos_weight_loss — up-weight fire pixels by pos_class_weight in the
+#                        velocity regression loss (class imbalance).
+#
+# The training loss is a velocity-field MSE; loss_function only affects
+# val/test loss logging. Validation integrates one fixed-seed trajectory, so
+# val_loss is deterministic and usable for checkpointing.
+seed_everything: 0
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    lr: 0.01
+model:
+  class_path: FlowMatchingLightning
+  init_args:
+    n_channels: 40
+    flatten_temporal_dimension: false
+    pos_class_weight: 10
+    loss_function: "BCE"
+    fm_samples: 16           # ODE trajectories at test time
+    fm_ode_steps: 20         # Euler integration steps
+    fm_hidden_channels: 64   # velocity net width
+    fm_n_blocks: 4           # velocity net FiLM residual blocks
+    fm_time_dim: 128         # time embedding dimensionality
+    fm_pos_weight_loss: true # up-weight fire pixels in the FM loss
+do_train: true
+do_test: true
+do_predict: false

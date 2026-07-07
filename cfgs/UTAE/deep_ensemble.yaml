@@ -1,0 +1,19 @@
+# Deep Ensembles evaluation config.
+# Set ensemble_ckpt_paths to the best checkpoints from N independently trained UTAE runs.
+seed_everything: 0
+model:
+  class_path: DeepEnsembleLightning
+  init_args:
+    n_channels: 40          
+    flatten_temporal_dimension: false
+    pos_class_weight: 10
+    loss_function: "BCE"
+    ensemble_ckpt_paths:
+      - "lightning_logs/seed0/checkpoints/best.ckpt"
+      - "lightning_logs/seed1/checkpoints/best.ckpt"
+      - "lightning_logs/seed2/checkpoints/best.ckpt"
+      - "lightning_logs/seed3/checkpoints/best.ckpt"
+      - "lightning_logs/seed4/checkpoints/best.ckpt"
+do_train: false
+do_test: true
+do_predict: false

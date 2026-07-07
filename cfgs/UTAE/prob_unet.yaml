@@ -1,0 +1,39 @@
+# Probabilistic U-Net — UTAE backbone + axis-aligned Gaussian latent space
+# for aleatoric uncertainty quantification.
+# Reference: Kohl et al., "A Probabilistic U-Net for Segmentation of Ambiguous
+# Images", NeurIPS 2018.
+#
+# Key hyperparameters to tune:
+#   latent_dim          — dimensionality of the latent space (paper default: 6).
+#   beta                — weight of KL(posterior || prior) in the ELBO (the KL is
+#                         normalized per pixel to match the mean-reduced recon
+#                         loss, so beta is on the paper's scale). Too low →
+#                         posterior ignores the prior (test-time samples collapse);
+#                         too high → latent space collapses to the prior (no
+#                         diversity). 10 is the common PyTorch-impl default.
+#   beta_anneal_epochs  — linear beta warm-up (0 = no annealing).
+#   prob_unet_samples   — prior samples at test time; probability maps are
+#                         averaged and their variance reported as aleatoric
+#                         uncertainty (16 is typical).
+#
+# n_leading_observations is linked automatically from --data.n_leading_observations
+# in train.py (the prior/posterior encoders see the temporally-flattened input).
+seed_everything: 0
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    lr: 0.01
+model:
+  class_path: ProbUNetLightning
+  init_args:
+    n_channels: 40
+    flatten_temporal_dimension: false
+    pos_class_weight: 10
+    loss_function: "BCE"
+    latent_dim: 6            # latent space dimensionality
+    beta: 1.0                # KL term weight in the ELBO
+    beta_anneal_epochs: 25   # linear beta warm-up (0 = off)
+    prob_unet_samples: 16    # prior samples at test time
+do_train: true
+do_test: true
+do_predict: false
